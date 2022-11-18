@@ -19,46 +19,64 @@ export class PokemonService {
       const pokemon = await this.pokemonModel.create(createPokemonDto);
       return pokemon;
     } catch (error) {
-      if (error.code === 11000) {
-        throw new BadRequestException(`Pokemon exist in DB ${JSON.stringify(error.keyValue)}`);
-      }
-      console.log(error);
-      throw new InternalServerErrorException(`Can't create Pokemon - Check server logs`);
+      this.handleExceptions
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  async findAll() {
+    return await this.pokemonModel.find();
   }
 
   async findOne(busqueda: string) {
     let pokemon: Pokemon;
+    
+    //Buscar por numero de pokemon
     if (!isNaN(+busqueda)) {
       pokemon = await this.pokemonModel.findOne({numPokemon:busqueda})
-    }
-
-    //ID mongo
-    if (isValidObjectId(busqueda)) {
+    }else if (isValidObjectId(busqueda)) {
+      //ID mongo
       pokemon = await this.pokemonModel.findById(busqueda);
-    }
-
-    //Buscar por nombre de Pokemon
-    if (!pokemon) {
+    }else if (!pokemon) {
+      //Buscar por nombre de Pokemon
       pokemon = await this.pokemonModel.findOne({name:busqueda.toLowerCase()});
     }
-
-
+    
     //Si no existe pokemon con la busqueda
     if(!pokemon) throw new BadRequestException(`Pokemon with id, name or numPokemon '${busqueda}' not found`);
-
+    
     return pokemon;
   }
 
-  update(id: number, updatePokemonDto: UpdatePokemonDto) {
-    return `This action updates a #${id} pokemon`;
+  async update(busqueda: string, updatePokemonDto: UpdatePokemonDto) {
+    const pokemon = await this.findOne(busqueda);
+
+    if (updatePokemonDto.name) {
+      updatePokemonDto.name = updatePokemonDto.name.toLowerCase();
+    }
+    try {
+      const updatePokemon = await pokemon.updateOne(updatePokemonDto,{ new: true});
+      return {...pokemon.toJSON(), ...updatePokemon};
+    } catch (error) {
+      this.handleExceptions(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pokemon`;
+  async remove(id: string) {
+    // const resultado = await this.pokemonModel.findByIdAndDelete(id);
+    const { deletedCount } = await this.pokemonModel.deleteOne({_id: id});
+    
+    if (deletedCount === 0) {
+      throw new BadRequestException(`Pokemon with id '${id}' nor fund`);
+    }
+
+    return "Delete is successful";
+  }
+
+  private handleExceptions(error: any){
+    if (error.code === 11000) {
+      throw new BadRequestException(`Pokemon exist in DB ${JSON.stringify(error.keyValue)}`);
+    }
+    console.log(error);
+    throw new InternalServerErrorException(`Can't create Pokemon - Check server logs`);
   }
 }
