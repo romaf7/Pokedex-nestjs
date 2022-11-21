@@ -8,6 +8,10 @@
 2. Ejecutar ```npm install```
 3. Tener Nest CLI instalado ```npm install -g @nestjs/cli```
 4. Levantar la base de datos ```docker-compose up -d```
+5. Clonar archivo ```.env.template``` y renombrar la copia a ```.env``` 
+6. Llenar las variables de entorno definidas en eL ```.env```
+7. Ejecutar la aplicación en dev: ```npm run start:dev``` o ```yarn start:dev```
+8. Poblar la base de datos ```http://localhost:3000/api/v2/seed```
 
 ## Stack usado
 * MongoDB
